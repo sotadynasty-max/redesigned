@@ -737,7 +737,7 @@
                 const emptyState = document.getElementById("empty-state");
                 if (emptyState) emptyState.hidden = true;
                 showEditor();
-                renderList(letter.id);
+                renderList();
             }
 
             function newLetter() {
@@ -795,7 +795,7 @@
                     letters = [letter, ...letters.filter((item) => item.id !== letter.id)];
                     deleteButton.hidden = false;
                     updateStatus(false);
-                    renderList();
+                    renderList(letter.id);
                     showToast(isNew ? "Your letter has been saved." : "Your changes have been saved.");
                 } catch (error) {
                     showToast(error.message);
