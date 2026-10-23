@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f7f4ed">
+    <title>Dear Diary — a quiet place for your thoughts</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --paper: #f7f4ed;
+            --paper-dark: #efebe2;
+            --ink: #302d29;
+            --muted: #938d81;
+            --line: #e8e2d7;
+            --accent: #8a7156;
+            --accent-dark: #70583f;
+            --white: #fffefa;
+            --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+            --sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+        [hidden] { display: none !important; }
+        body {
+            margin: 0;
+            min-width: 320px;
+            min-height: 100vh;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--sans);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        button, input, textarea { font: inherit; }
+        button { color: inherit; }
+        button:focus-visible, input:focus-visible, textarea:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
+        }
+
+        .app { min-height: 100vh; display: grid; grid-template-columns: 310px minmax(0, 1fr); }
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 34px 24px 22px;
+            border-right: 1px solid var(--line);
+            background: rgba(255, 254, 250, .42);
+        }
+        .brand { display: flex; align-items: center; gap: 12px; margin: 0 0 38px 4px; }
+        .brand-mark {
+            display: grid;
+            width: 39px;
+            height: 39px;
+            place-items: center;
+            border: 1px solid #ded3c4;
+            border-radius: 50%;
+            color: var(--accent);
+        }
+        .brand-mark svg { width: 19px; height: 19px; }
+        .brand-name { font: 20px var(--serif); letter-spacing: -.4px; }
+        .brand-note { margin-top: 2px; color: var(--muted); font-size: 10px; letter-spacing: 1.35px; text-transform: uppercase; }
+        .new-entry {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            width: 100%;
+            padding: 13px 16px;
+            border: 0;
+            border-radius: 5px;
+            background: var(--ink);
+            color: #fffefa;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background .18s, transform .18s;
+        }
+        .new-entry:hover { background: #49433c; transform: translateY(-1px); }
+        .new-entry svg { width: 15px; height: 15px; }
+        .section-label {
+            display: flex;
+            justify-content: space-between;
+            margin: 34px 4px 13px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .entry-count { color: #aaa395; font-weight: 400; letter-spacing: 0; }
+        .search-wrap { position: relative; margin-bottom: 8px; }
+        .search-wrap svg {
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            width: 15px;
+            height: 15px;
+            color: #aaa395;
+            transform: translateY(-50%);
+        }
+        .search {
+            width: 100%;
+            padding: 10px 12px 10px 36px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            background: #f1eee7;
+            color: var(--ink);
+            font-size: 12px;
+        }
+        .search::placeholder { color: #a49d90; }
+        .search:focus { border-color: #d8ccbb; outline: none; }
+        .entries { flex: 1; overflow-y: auto; }
+        .entry-item {
+            display: block;
+            width: 100%;
+            padding: 13px 12px 12px;
+            border: 0;
+            border-left: 2px solid transparent;
+            border-radius: 0 4px 4px 0;
+            background: transparent;
+            cursor: pointer;
+            text-align: left;
+            transition: background .15s;
+        }
+        .entry-item:hover { background: #f1eee7; }
+        .entry-item.active { border-left-color: var(--accent); background: #efebe3; }
+        .entry-title {
+            display: block;
+            overflow: hidden;
+            margin-bottom: 5px;
+            font: 16px var(--serif);
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .entry-preview {
+            display: block;
+            overflow: hidden;
+            margin-bottom: 7px;
+            color: #8f897e;
+            font-size: 11px;
+            line-height: 1.5;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .entry-date { color: #a59e91; font-size: 10px; }
+        .sidebar-empty { padding: 23px 12px; color: var(--muted); font: 14px/1.7 var(--serif); text-align: center; }
+        .sidebar-bottom {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 17px 4px 0;
+            border-top: 1px solid var(--line);
+            color: #a39c8f;
+            font-size: 10px;
+        }
+        .sidebar-bottom svg { width: 13px; height: 13px; }
+
+        .main { min-width: 0; min-height: 100vh; display: flex; flex-direction: column; }
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            min-height: 72px;
+            padding: 0 7.5%;
+            border-bottom: 1px solid var(--line);
+        }
+        .save-status { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #92a184; }
+        .status-dot.unsaved { background: #c58d58; }
+        .workspace {
+            display: flex;
+            flex: 1;
+            justify-content: center;
+            padding: 60px 7.5% 70px;
+        }
+        .editor { width: min(100%, 720px); }
+        .date-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 2px 0 27px;
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .date-line::before { width: 23px; height: 1px; background: #cabbab; content: ""; }
+        .title-input {
+            display: block;
+            width: 100%;
+            padding: 0;
+            border: 0;
+            outline: none;
+            background: transparent;
+            color: var(--ink);
+            font: clamp(35px, 5vw, 50px)/1.16 var(--serif);
+            letter-spacing: -1.2px;
+        }
+        .title-input::placeholder { color: #c8c1b5; }
+        .entry-date-input {
+            margin: 17px 0 27px;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: #a39c90;
+            font-size: 11px;
+            letter-spacing: .2px;
+        }
+        .divider { height: 1px; background: var(--line); }
+        .body-input {
+            display: block;
+            width: 100%;
+            min-height: min(50vh, 440px);
+            margin-top: 27px;
+            padding: 0;
+            resize: vertical;
+            border: 0;
+            outline: none;
+            background: transparent;
+            color: #514c44;
+            font: 16px/1.95 var(--serif);
+        }
+        .body-input::placeholder { color: #b9b2a6; }
+        .editor-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--line);
+        }
+        .word-count { color: #aaa395; font-size: 10px; }
+        .actions { display: flex; align-items: center; gap: 17px; }
+        .delete-button, .save-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            border: 0;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .delete-button { padding: 9px 0; background: transparent; color: #9b7269; }
+        .delete-button:hover { color: #75483f; }
+        .delete-button svg { width: 14px; height: 14px; }
+        .save-button {
+            min-width: 112px;
+            padding: 11px 17px;
+            border-radius: 4px;
+            background: var(--accent);
+            color: white;
+            transition: background .15s;
+        }
+        .save-button:hover { background: var(--accent-dark); }
+        .save-button:disabled { cursor: default; opacity: .55; }
+        .save-button svg { width: 14px; height: 14px; }
+        .empty-state {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 55px 24px;
+            text-align: center;
+        }
+        .empty-illustration {
+            display: grid;
+            width: 76px;
+            height: 76px;
+            margin-bottom: 24px;
+            place-items: center;
+            border: 1px solid #e3dbce;
+            border-radius: 50%;
+            color: #9a846c;
+        }
+        .empty-illustration svg { width: 28px; height: 28px; }
+        .empty-state h1 { margin: 0 0 11px; font: 31px var(--serif); font-weight: 400; }
+        .empty-state p { max-width: 300px; margin: 0 0 23px; color: var(--muted); font: 15px/1.7 var(--serif); }
+        .empty-state .new-entry { width: auto; padding-right: 20px; padding-left: 20px; }
+        .mobile-new { display: none; }
+        .toast {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            padding: 11px 16px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: var(--white);
+            box-shadow: 0 6px 22px #302d2914;
+            color: var(--ink);
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(7px);
+            transition: opacity .2s, transform .2s;
+        }
+        .toast.visible { opacity: 1; transform: translateY(0); }
+        .auth-screen {
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: radial-gradient(ellipse at 50% 35%, #fffefa 0, #f7f4ed 66%);
+        }
+        .auth-card { width: min(100%, 390px); }
+        .auth-brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 39px; }
+        .auth-heading { margin: 0 0 9px; font: 34px var(--serif); font-weight: 400; text-align: center; }
+        .auth-intro { margin: 0 auto 28px; color: var(--muted); font: 15px/1.65 var(--serif); text-align: center; }
+        .auth-form { display: grid; gap: 15px; }
+        .auth-label { display: grid; gap: 7px; color: #655e54; font-size: 11px; font-weight: 600; letter-spacing: .5px; }
+        .auth-input {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #e1dbd0;
+            border-radius: 4px;
+            background: var(--white);
+            color: var(--ink);
+            font-size: 13px;
+        }
+        .auth-input::placeholder { color: #b4ada1; }
+        .auth-submit { margin-top: 3px; }
+        .auth-error { min-height: 17px; margin: 0; color: #9b5548; font-size: 12px; line-height: 1.5; }
+        .auth-switch { margin: 21px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+        .text-button { padding: 0; border: 0; background: transparent; color: var(--accent-dark); cursor: pointer; font-size: inherit; text-decoration: underline; text-underline-offset: 3px; }
+        .auth-footnote { margin: 22px auto 0; color: #a39c90; font: 12px/1.65 var(--serif); text-align: center; }
+        .account-controls { display: flex; align-items: center; gap: 15px; }
+        .account-email { max-width: 230px; overflow: hidden; color: #8e877c; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+        .logout-button { padding: 7px 0; border: 0; background: transparent; color: var(--accent-dark); cursor: pointer; font-size: 11px; }
+        .logout-button:hover { text-decoration: underline; text-underline-offset: 3px; }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            clip-path: inset(50%);
+        }
+
+        @media (max-width: 760px) {
+            .app { grid-template-columns: 250px minmax(0, 1fr); }
+            .sidebar { padding-right: 17px; padding-left: 17px; }
+            .workspace { padding: 45px 7%; }
+            .topbar { min-height: 60px; padding-right: 7%; }
+        }
+        @media (max-width: 600px) {
+            .auth-screen { min-height: 100svh; }
+            .auth-heading { font-size: 30px; }
+            .account-controls { gap: 10px; }
+            .account-email { max-width: 170px; }
+            .app { display: flex; flex-direction: column; }
+            .sidebar {
+                min-height: auto;
+                padding: 17px 18px 12px;
+                border-right: 0;
+                border-bottom: 1px solid var(--line);
+            }
+            .brand { margin: 0; }
+            .brand-mark { width: 34px; height: 34px; }
+            .brand-name { font-size: 18px; }
+            .brand-note { font-size: 9px; }
+            .sidebar > .new-entry, .sidebar-bottom { display: none; }
+            .section-label { margin: 15px 2px 9px; }
+            .search-wrap { margin-bottom: 2px; }
+            .entries {
+                display: flex;
+                gap: 5px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                margin-right: -18px;
+                padding: 0 18px 3px 0;
+            }
+            .entry-item { flex: 0 0 185px; padding: 9px 10px; }
+            .entry-title { font-size: 14px; }
+            .entry-preview { margin-bottom: 5px; }
+            .sidebar-empty { min-width: 100%; padding: 13px 8px; font-size: 13px; }
+            .main { min-height: 0; flex: 1; }
+            .topbar { min-height: 45px; padding: 0 20px; border-bottom: 0; }
+            .workspace { padding: 25px 23px 40px; }
+            .date-line { margin-bottom: 20px; }
+            .title-input { font-size: 38px; }
+            .entry-date-input { margin: 14px 0 22px; }
+            .body-input { min-height: 34vh; margin-top: 22px; font-size: 16px; }
+            .mobile-new {
+                position: fixed;
+                right: 18px;
+                bottom: 18px;
+                display: grid;
+                width: 50px;
+                height: 50px;
+                place-items: center;
+                border: 0;
+                border-radius: 50%;
+                background: var(--ink);
+                box-shadow: 0 5px 18px #302d2930;
+                color: white;
+                cursor: pointer;
+            }
+            .mobile-new svg { width: 20px; height: 20px; }
+            .empty-state { min-height: 48vh; }
+            .toast { right: 16px; bottom: 80px; }
+        }
+    </style>
+</head>
+<body>
+    <section class="auth-screen" id="auth-screen" aria-labelledby="auth-heading">
+        <div class="auth-card">
+            <div class="brand auth-brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 5.5v12M8 7h8M8 11h7"/></svg>
+                </span>
+                <span><span class="brand-name" position="relative">Dear Diary</span>
+            </div>
+            <h1 class="auth-heading" id="auth-heading">Welcome back.</h1>
+            <p class="auth-intro" id="auth-intro">A quiet place for your thoughts, whenever you need it.</p>
+            <form class="auth-form" id="auth-form">
+                <label class="auth-label" for="auth-email">Email
+                    <input class="auth-input" id="auth-email" type="email" autocomplete="email" maxlength="254" required placeholder="you@example.com">
+                </label>
+                <label class="auth-label" for="auth-password">Password
+                    <input class="auth-input" id="auth-password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required placeholder="At least 12 characters">
+                </label>
+                <p class="auth-error" id="auth-error" aria-live="polite"></p>
+                <button class="new-entry auth-submit" id="auth-submit" type="submit">Sign in</button>
+            </form>
+            <p class="auth-switch"><span id="auth-switch-copy">New here?</span> <button class="text-button" id="auth-switch" type="button">Create an account</button></p>
+            <p class="auth-footnote">Your letters are private to your account. Keep your password safe; password recovery is not available yet.</p>
+        </div>
+    </section>
+    <div class="app" id="app" hidden>
+        <aside class="sidebar" aria-label="Diary entries">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 5.5v12M8 7h8M8 11h7"/></svg>
+                </span>
+                <span><span class="brand-name">Dear Diary</span><span class="brand-note">A place for your thoughts</span></span>
+            </div>
+            <button class="new-entry" id="new-entry" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                Write a letter
+            </button>
+            <div class="section-label"><span>Your letters</span><span class="entry-count" id="entry-count">0</span></div>
+            <label class="search-wrap">
+                <span class="sr-only">Search letters</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
+                <input class="search" id="search" type="search" placeholder="Find a letter..." autocomplete="off">
+            </label>
+            <div class="entries" id="entries" aria-live="polite"></div>
+            <div class="sidebar-bottom">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg>
+                Private to your signed-in account
+            </div>
+        </aside>
+
+        <main class="main" id="main">
+            <div class="topbar" id="topbar">
+                <div class="account-controls">
+                    <div class="save-status" aria-live="polite"><span class="status-dot" id="status-dot"></span><span id="save-status">Saved online</span></div>
+                    <span class="account-email" id="account-email"></span>
+                    <button class="logout-button" id="logout-button" type="button">Sign out</button>
+                </div>
+            </div>
+            <section class="workspace" id="workspace" aria-label="Letter editor">
+                <div class="editor">
+                    <div class="date-line">A moment to remember</div>
+                    <label class="sr-only" for="entry-title">Letter title</label>
+                    <input class="title-input" id="entry-title" type="text" maxlength="120" placeholder="A letter to myself..." autocomplete="off">
+                    <label class="sr-only" for="entry-date">Letter date</label>
+                    <input class="entry-date-input" id="entry-date" type="date">
+                    <div class="divider"></div>
+                    <label class="sr-only" for="entry-body">Your letter</label>
+                    <textarea class="body-input" id="entry-body" placeholder="Dear diary,&#10;&#10;What's on your mind today?"></textarea>
+                    <div class="editor-footer">
+                        <span class="word-count" id="word-count">0 words</span>
+                        <div class="actions">
+                            <button class="delete-button" id="delete-entry" type="button" hidden>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6m4-6v6M5.5 7l1 14h11l1-14M9 7V4h6v3"/></svg>
+                                Delete
+                            </button>
+                            <button class="save-button" id="save-entry" type="button">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+                                Save letter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <button class="mobile-new" id="mobile-new" type="button" aria-label="Write a new letter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+        (() => {
+            const app = document.getElementById("app");
+            const authScreen = document.getElementById("auth-screen");
+            const authForm = document.getElementById("auth-form");
+            const authEmail = document.getElementById("auth-email");
+            const authPassword = document.getElementById("auth-password");
+            const authHeading = document.getElementById("auth-heading");
+            const authIntro = document.getElementById("auth-intro");
+            const authError = document.getElementById("auth-error");
+            const authSubmit = document.getElementById("auth-submit");
+            const authSwitch = document.getElementById("auth-switch");
+            const authSwitchCopy = document.getElementById("auth-switch-copy");
+            const accountEmail = document.getElementById("account-email");
+            const titleInput = document.getElementById("entry-title");
+            const bodyInput = document.getElementById("entry-body");
+            const dateInput = document.getElementById("entry-date");
+            const entriesElement = document.getElementById("entries");
+            const searchInput = document.getElementById("search");
+            const saveButton = document.getElementById("save-entry");
+            const deleteButton = document.getElementById("delete-entry");
+            const countElement = document.getElementById("entry-count");
+            const wordCount = document.getElementById("word-count");
+            const statusText = document.getElementById("save-status");
+            const statusDot = document.getElementById("status-dot");
+            const workspace = document.getElementById("workspace");
+            const topbar = document.getElementById("topbar");
+            const toast = document.getElementById("toast");
+            let letters = [];
+            let selectedId = null;
+            let toastTimer;
+            let csrfToken = "";
+            let authMode = "login";
+
+            function localDateString(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, "0");
+                const day = String(date.getDate()).padStart(2, "0");
+                return `${year}-${month}-${day}`;
+            }
+
+            function formatDate(value, options) {
+                const [year, month, day] = value.split("-").map(Number);
+                if (!year || !month || !day) return value;
+                return new Intl.DateTimeFormat(undefined, options).format(new Date(year, month - 1, day));
+            }
+
+            function showToast(message) {
+                toast.textContent = message;
+                toast.classList.add("visible");
+                window.clearTimeout(toastTimer);
+                toastTimer = window.setTimeout(() => toast.classList.remove("visible"), 2600);
+            }
+
+            async function api(url, options = {}) {
+                const method = options.method || "GET";
+                const headers = new Headers(options.headers || {});
+                if (options.body !== undefined) headers.set("Content-Type", "application/json");
+                if (!["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase())) {
+                    headers.set("X-CSRF-Token", csrfToken);
+                }
+                let response;
+                try {
+                    response = await fetch(url, {
+                        ...options,
+                        method,
+                        headers,
+                        credentials: "same-origin"
+                    });
+                } catch (error) {
+                    throw new Error("Can't reach the diary server. Check your connection and try again.");
+                }
+                if (response.status === 204) return null;
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.error || "The request could not be completed.");
+                return result;
+            }
+
+            function setAuthMode(mode) {
+                authMode = mode;
+                const registering = mode === "register";
+                authHeading.textContent = registering ? "Make this place yours." : "Welcome back.";
+                authIntro.textContent = registering
+                    ? "Create an account for a quiet place that travels with you."
+                    : "A quiet place for your thoughts, whenever you need it.";
+                authSubmit.textContent = registering ? "Create account" : "Sign in";
+                authSwitchCopy.textContent = registering ? "Already have an account?" : "New here?";
+                authSwitch.textContent = registering ? "Sign in" : "Create an account";
+                authPassword.autocomplete = registering ? "new-password" : "current-password";
+                authPassword.minLength = registering ? 12 : 1;
+                authPassword.placeholder = registering ? "At least 12 characters" : "Your password";
+                authError.textContent = "";
+            }
+
+            function showAuth(message = "") {
+                app.hidden = true;
+                authScreen.hidden = false;
+                authError.textContent = message;
+                authPassword.value = "";
+            }
+
+            async function showDiary(user) {
+                authScreen.hidden = true;
+                app.hidden = false;
+                accountEmail.textContent = user.email;
+                try {
+                    const result = await api("/api/letters");
+                    letters = result.letters;
+                    renderList();
+                    if (letters.length) {
+                        openLetter(letters[0].id);
+                    } else {
+                        showEmptyState();
+                    }
+                } catch (error) {
+                    if (error.message === "Please sign in to continue.") {
+                        showAuth("Your session ended. Please sign in again.");
+                    } else {
+                        showToast(error.message);
+                        showEmptyState();
+                    }
+                }
+            }
+
+            async function boot() {
+                try {
+                    const csrf = await api("/api/csrf");
+                    csrfToken = csrf.csrfToken;
+                    const result = await api("/api/auth/me");
+                    if (result.user) await showDiary(result.user);
+                    else showAuth();
+                } catch (error) {
+                    showAuth(error.message);
+                }
+            }
+
+            function updateStatus(unsaved) {
+                statusText.textContent = unsaved ? "Unsaved changes" : "Saved online";
+                statusDot.classList.toggle("unsaved", unsaved);
+            }
+
+            function updateWordCount() {
+                const words = bodyInput.value.trim().split(/\s+/).filter(Boolean).length;
+                wordCount.textContent = `${words} ${words === 1 ? "word" : "words"}`;
+            }
+
+            function renderList() {
+                const query = searchInput.value.trim().toLocaleLowerCase();
+                const filtered = letters
+                    .filter((letter) => `${letter.title} ${letter.body} ${letter.date}`.toLocaleLowerCase().includes(query))
+                    .sort((a, b) => b.updatedAt - a.updatedAt);
+                countElement.textContent = String(letters.length);
+                entriesElement.replaceChildren();
+
+                if (!filtered.length) {
+                    const empty = document.createElement("div");
+                    empty.className = "sidebar-empty";
+                    empty.textContent = query ? "No letters found. Try another search." : "Your letters will find a home here.";
+                    entriesElement.append(empty);
+                    return;
+                }
+
+                filtered.forEach((letter) => {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = `entry-item${letter.id === selectedId ? " active" : ""}`;
+                    button.setAttribute("aria-current", letter.id === selectedId ? "true" : "false");
+                    const title = document.createElement("span");
+                    title.className = "entry-title";
+                    title.textContent = letter.title || "Untitled letter";
+                    const preview = document.createElement("span");
+                    preview.className = "entry-preview";
+                    preview.textContent = letter.body.trim().replace(/\s+/g, " ") || "An empty page...";
+                    const date = document.createElement("span");
+                    date.className = "entry-date";
+                    date.textContent = formatDate(letter.date, { month: "short", day: "numeric", year: "numeric" });
+                    button.append(title, preview, date);
+                    button.addEventListener("click", () => openLetter(letter.id));
+                    entriesElement.append(button);
+                });
+            }
+
+            function showEditor() {
+                workspace.hidden = false;
+                topbar.hidden = false;
+                document.querySelector(".mobile-new").hidden = true;
+            }
+
+            function showEmptyState() {
+                workspace.hidden = true;
+                topbar.hidden = true;
+                document.querySelector(".mobile-new").hidden = true;
+                let emptyState = document.getElementById("empty-state");
+                if (!emptyState) {
+                    emptyState = document.createElement("section");
+                    emptyState.id = "empty-state";
+                    emptyState.className = "empty-state";
+                    emptyState.innerHTML = `
+                        <span class="empty-illustration" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 5.5v12M8 8h8M8 12h6"/></svg>
+                        </span>
+                        <h1>A quiet page, just for you.</h1>
+                        <p>Save the little things, the big feelings, and everything in between.</p>
+                        <button class="new-entry" type="button">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                            Write your first letter
+                        </button>`;
+                    emptyState.querySelector("button").addEventListener("click", newLetter);
+                    document.getElementById("main").append(emptyState);
+                }
+                emptyState.hidden = false;
+            }
+
+            function openLetter(id) {
+                const letter = letters.find((item) => item.id === id);
+                if (!letter) return;
+                selectedId = letter.id;
+                titleInput.value = letter.title;
+                bodyInput.value = letter.body;
+                dateInput.value = letter.date;
+                deleteButton.hidden = false;
+                updateStatus(false);
+                updateWordCount();
+                const emptyState = document.getElementById("empty-state");
+                if (emptyState) emptyState.hidden = true;
+                showEditor();
+                renderList();
+            }
+
+            function newLetter() {
+                selectedId = null;
+                titleInput.value = "";
+                bodyInput.value = "";
+                dateInput.value = localDateString(new Date());
+                deleteButton.hidden = true;
+                updateStatus(false);
+                updateWordCount();
+                const emptyState = document.getElementById("empty-state");
+                if (emptyState) emptyState.hidden = true;
+                showEditor();
+                renderList();
+                titleInput.focus();
+                if (window.matchMedia("(max-width: 600px)").matches) {
+                    workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            }
+
+            async function saveLetter() {
+                const title = titleInput.value.trim();
+                const body = bodyInput.value;
+                const date = dateInput.value || localDateString(new Date());
+                if (!title && !body) {
+                    showToast("Write a title or a few words before saving.");
+                    (titleInput.value ? bodyInput : titleInput).focus();
+                    return;
+                }
+
+                const isNew = !selectedId;
+                saveButton.disabled = true;
+                try {
+                    const payload = { title, body, date };
+                    const result = await api(
+                        isNew ? "/api/letters" : `/api/letters/${encodeURIComponent(selectedId)}`,
+                        {
+                            method: isNew ? "POST" : "PUT",
+                            body: JSON.stringify(payload)
+                        }
+                    );
+                    const letter = result.letter;
+                    selectedId = letter.id;
+                    letters = [letter, ...letters.filter((item) => item.id !== letter.id)];
+                    deleteButton.hidden = false;
+                    updateStatus(false);
+                    renderList();
+                    showToast(isNew ? "Your letter has been saved." : "Your changes have been saved.");
+                } catch (error) {
+                    showToast(error.message);
+                } finally {
+                    saveButton.disabled = false;
+                }
+            }
+
+            async function deleteLetter() {
+                if (!selectedId) return;
+                const letter = letters.find((item) => item.id === selectedId);
+                const label = letter && letter.title ? `"${letter.title}"` : "this letter";
+                if (!window.confirm(`Delete ${label}? This can't be undone.`)) return;
+                deleteButton.disabled = true;
+                try {
+                    await api(`/api/letters/${encodeURIComponent(selectedId)}`, { method: "DELETE" });
+                    letters = letters.filter((item) => item.id !== selectedId);
+                    selectedId = null;
+                    renderList();
+                    if (letters.length) openLetter(letters[0].id);
+                    else showEmptyState();
+                    showToast("Letter deleted.");
+                } catch (error) {
+                    showToast(error.message);
+                } finally {
+                    deleteButton.disabled = false;
+                }
+            }
+
+            document.getElementById("new-entry").addEventListener("click", newLetter);
+            document.getElementById("mobile-new").addEventListener("click", newLetter);
+            saveButton.addEventListener("click", saveLetter);
+            deleteButton.addEventListener("click", deleteLetter);
+            searchInput.addEventListener("input", renderList);
+            titleInput.addEventListener("input", () => updateStatus(true));
+            bodyInput.addEventListener("input", () => {
+                updateWordCount();
+                updateStatus(true);
+            });
+            dateInput.addEventListener("input", () => updateStatus(true));
+            authSwitch.addEventListener("click", () => setAuthMode(authMode === "login" ? "register" : "login"));
+            authForm.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                authError.textContent = "";
+                authSubmit.disabled = true;
+                try {
+                    const result = await api(`/api/auth/${authMode}`, {
+                        method: "POST",
+                        body: JSON.stringify({
+                            email: authEmail.value,
+                            password: authPassword.value
+                        })
+                    });
+                    csrfToken = result.csrfToken;
+                    authPassword.value = "";
+                    await showDiary(result.user);
+                } catch (error) {
+                    authError.textContent = error.message;
+                } finally {
+                    authSubmit.disabled = false;
+                }
+            });
+            document.getElementById("logout-button").addEventListener("click", async () => {
+                try {
+                    await api("/api/auth/logout", { method: "POST" });
+                    csrfToken = "";
+                    letters = [];
+                    selectedId = null;
+                    showAuth();
+                } catch (error) {
+                    showToast(error.message);
+                }
+            });
+            window.addEventListener("keydown", (event) => {
+                if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+                    event.preventDefault();
+                    if (!app.hidden && !workspace.hidden) saveLetter();
+                }
+            });
+
+            setAuthMode("login");
+            boot();
+        })();
+    </script>
+</body>
+</html>

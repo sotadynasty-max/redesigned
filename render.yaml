@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: dear-diary
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dear-diary-db
+          property: connectionString
+
+databases:
+  - name: dear-diary-db
+    databaseName: dear_diary
+    user: dear_diary
+    plan: basic-256mb
