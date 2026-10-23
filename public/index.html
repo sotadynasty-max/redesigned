@@ -176,11 +176,15 @@
         }
         .editor { width: min(100%, 720px); }
         @keyframes first-letter-arrive {
-            from { opacity: 0; transform: translateY(14px); }
+            from { opacity: 0; transform: translateY(26px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes first-letter-fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
         .first-letter-opening .editor {
-            animation: first-letter-arrive .6s cubic-bezier(.2, .7, .25, 1) both;
+            animation: first-letter-arrive .85s cubic-bezier(.2, .7, .25, 1) both;
         }
         .date-line {
             display: flex;
@@ -412,7 +416,9 @@
             .toast { right: 16px; bottom: 80px; }
         }
         @media (prefers-reduced-motion: reduce) {
-            .first-letter-opening .editor { animation: none; }
+            .first-letter-opening .editor {
+                animation: first-letter-fade .35s ease-out both;
+            }
         }
     </style>
 </head>
@@ -659,6 +665,10 @@
                     .sort((a, b) => b.updatedAt - a.updatedAt);
                 countElement.textContent = String(letters.length);
                 entriesElement.replaceChildren();
+                if (animateId !== null) {
+                    entriesElement.scrollTop = 0;
+                    entriesElement.scrollLeft = 0;
+                }
 
                 if (!filtered.length) {
                     const empty = document.createElement("div");
@@ -671,7 +681,7 @@
                 filtered.forEach((letter) => {
                     const button = document.createElement("button");
                     button.type = "button";
-                    button.className = `entry-item${letter.id === selectedId ? " active" : ""}${letter.id === animateId ? " entry-arriving" : ""}`;
+                    button.className = `entry-item${letter.id === selectedId ? " active" : ""}`;
                     button.setAttribute("aria-current", letter.id === selectedId ? "true" : "false");
                     const title = document.createElement("span");
                     title.className = "entry-title";
@@ -685,15 +695,20 @@
                     button.append(title, preview, date);
                     button.addEventListener("click", () => openLetter(letter.id));
                     entriesElement.append(button);
-                    if (letter.id === animateId && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                        const animation = button.animate(
-                            [
-                                { opacity: 0, transform: "translateY(14px)" },
-                                { opacity: 1, transform: "translateY(0)" }
-                            ],
-                            { duration: 600, easing: "cubic-bezier(.2, .7, .25, 1)" }
+                    if (letter.id === animateId) {
+                        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                        button.animate(
+                            reduceMotion
+                                ? [{ opacity: 0 }, { opacity: 1 }]
+                                : [
+                                    { opacity: 0, transform: "translateY(26px)" },
+                                    { opacity: 1, transform: "translateY(0)" }
+                                ],
+                            {
+                                duration: reduceMotion ? 350 : 850,
+                                easing: "cubic-bezier(.2, .7, .25, 1)"
+                            }
                         );
-                        animation.onfinish = () => animation.cancel();
                     }
                 });
             }
@@ -757,7 +772,7 @@
                 updateWordCount();
                 if (emptyState) emptyState.hidden = true;
                 workspace.classList.remove("first-letter-opening");
-                if (isFirstLetter && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                if (isFirstLetter) {
                     void workspace.offsetWidth;
                     workspace.classList.add("first-letter-opening");
                     document.querySelector(".editor").addEventListener("animationend", (event) => {
@@ -800,6 +815,7 @@
                     letters = [letter, ...letters.filter((item) => item.id !== letter.id)];
                     deleteButton.hidden = false;
                     updateStatus(false);
+                    searchInput.value = "";
                     renderList(letter.id);
                     showToast(isNew ? "Your letter has been saved." : "Your changes have been saved.");
                 } catch (error) {
