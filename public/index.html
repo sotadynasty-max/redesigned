@@ -179,7 +179,7 @@
             from { opacity: 0; transform: translateY(14px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .first-letter-opening .editor, .entry-arriving {
+        .first-letter-opening .editor {
             animation: first-letter-arrive .6s cubic-bezier(.2, .7, .25, 1) both;
         }
         .date-line {
@@ -412,7 +412,7 @@
             .toast { right: 16px; bottom: 80px; }
         }
         @media (prefers-reduced-motion: reduce) {
-            .first-letter-opening .editor, .entry-arriving { animation: none; }
+            .first-letter-opening .editor { animation: none; }
         }
     </style>
 </head>
@@ -684,12 +684,17 @@
                     date.textContent = formatDate(letter.date, { month: "short", day: "numeric", year: "numeric" });
                     button.append(title, preview, date);
                     button.addEventListener("click", () => openLetter(letter.id));
-                    if (letter.id === animateId) {
-                        button.addEventListener("animationend", (event) => {
-                            if (event.target === button) button.classList.remove("entry-arriving");
-                        }, { once: true });
-                    }
                     entriesElement.append(button);
+                    if (letter.id === animateId && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                        const animation = button.animate(
+                            [
+                                { opacity: 0, transform: "translateY(14px)" },
+                                { opacity: 1, transform: "translateY(0)" }
+                            ],
+                            { duration: 600, easing: "cubic-bezier(.2, .7, .25, 1)" }
+                        );
+                        animation.onfinish = () => animation.cancel();
+                    }
                 });
             }
 
