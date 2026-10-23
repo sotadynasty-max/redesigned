@@ -510,7 +510,7 @@
             </section>
         </main>
     </div>
-    <button class="mobile-new" id="mobile-new" type="button" aria-label="Write a new letter">
+    <button class="mobile-new" id="mobile-new" type="button" aria-label="Write a new letter" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     </button>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -542,6 +542,7 @@
             const statusDot = document.getElementById("status-dot");
             const workspace = document.getElementById("workspace");
             const topbar = document.getElementById("topbar");
+            const mobileNew = document.getElementById("mobile-new");
             const toast = document.getElementById("toast");
             let letters = [];
             let selectedId = null;
@@ -612,6 +613,7 @@
             function showAuth(message = "") {
                 app.hidden = true;
                 authScreen.hidden = false;
+                mobileNew.hidden = true;
                 authError.textContent = message;
                 authPassword.value = "";
             }
@@ -704,7 +706,7 @@
             function showEditor() {
                 workspace.hidden = false;
                 topbar.hidden = false;
-                document.querySelector(".mobile-new").hidden = true;
+                mobileNew.hidden = !selectedId;
             }
 
             function showEmptyState() {
@@ -802,6 +804,7 @@
                     selectedId = letter.id;
                     letters = [letter, ...letters.filter((item) => item.id !== letter.id)];
                     deleteButton.hidden = false;
+                    mobileNew.hidden = false;
                     updateStatus(false);
                     searchInput.value = "";
                     renderList(letter.id);
