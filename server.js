@@ -131,7 +131,9 @@ function serializeLetter(row) {
         id: row.id,
         title: row.title,
         body: row.body,
-        date: row.entry_date,
+        date: row.entry_date instanceof Date
+            ? row.entry_date.toISOString().slice(0, 10)
+            : String(row.entry_date).slice(0, 10),
         updatedAt: new Date(row.updated_at).getTime()
     };
 }
