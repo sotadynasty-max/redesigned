@@ -324,7 +324,12 @@ app.delete("/api/letters/:id", requireAuth, async (req, res, next) => {
 
 app.use(express.static(path.join(__dirname, "public"), {
     index: "index.html",
-    maxAge: isProduction ? "1h" : 0
+    maxAge: isProduction ? "1h" : 0,
+    setHeaders(res, filePath) {
+        if (path.basename(filePath) === "index.html") {
+            res.setHeader("Cache-Control", "no-store");
+        }
+    }
 }));
 
 app.use((error, req, res, _next) => {
