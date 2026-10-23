@@ -715,9 +715,9 @@
                 selectedId = letter.id;
                 titleInput.value = letter.title;
                 bodyInput.value = letter.body;
-                dateInput.value = letter.date;
+                dateInput.value = localDateString(new Date());
                 deleteButton.hidden = false;
-                updateStatus(false);
+                updateStatus(dateInput.value !== letter.date);
                 updateWordCount();
                 const emptyState = document.getElementById("empty-state");
                 if (emptyState) emptyState.hidden = true;
